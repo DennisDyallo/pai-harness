@@ -7,6 +7,15 @@
 
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { homedir } from 'os';
+
+function expandPath(p: string): string {
+  const home = homedir();
+  return p
+    .replace(/^\$HOME(?=\/|$)/, home)
+    .replace(/^\$\{HOME\}(?=\/|$)/, home)
+    .replace(/^~(?=\/|$)/, home);
+}
 
 export interface ContextPiece {
   source: string;
@@ -32,7 +41,7 @@ export function assembleContext(paiDir?: string): ContextPiece[] {
       const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
       if (settings.loadAtStartup && Array.isArray(settings.loadAtStartup)) {
         for (const filePath of settings.loadAtStartup) {
-          const resolved = filePath.replace(/\$HOME/g, process.env.HOME ?? '');
+          const resolved = expandPath(filePath);
           if (existsSync(resolved)) {
             const content = readFileSync(resolved, 'utf-8');
             pieces.push({ source: `loadAtStartup: ${filePath}`, content, chars: content.length });
@@ -107,7 +116,13 @@ export async function assembleContextWithHook(paiDir?: string, hookPath?: string
           }
         }
       }
-    } catch {}
+    } catch (err) {
+      pieces.push({
+        source: 'LoadContext hook (error)',
+        content: `Hook failed: ${err instanceof Error ? err.message : String(err)}`,
+        chars: 0,
+      });
+    }
   }
 
   return pieces;
