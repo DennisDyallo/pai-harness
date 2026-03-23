@@ -1,0 +1,5 @@
+#!/bin/bash
+# Stub for kitten (Kitty terminal control)
+# Logs calls and exits 0 — prevents real terminal interactions in sandbox
+echo "[stub:kitten] $*" >> "${PAI_DIR:-/tmp}/harness-stub.log" 2>/dev/null
+exit 0

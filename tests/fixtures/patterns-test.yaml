@@ -1,0 +1,41 @@
+version: "1.0"
+philosophy:
+  mode: strict
+  principle: "Test patterns for harness validation"
+
+bash:
+  trusted:
+    - pattern: "^echo "
+      reason: "Echo is safe"
+    - pattern: "^ls"
+      reason: "Listing files is safe"
+  blocked:
+    - pattern: "rm -rf /"
+      reason: "Catastrophic filesystem deletion"
+    - pattern: "mkfs\\."
+      reason: "Filesystem format operation"
+    - pattern: "dd if=/dev/zero"
+      reason: "Disk overwrite operation"
+  confirm:
+    - pattern: "git push --force"
+      reason: "Force push can overwrite shared history"
+    - pattern: "git reset --hard"
+      reason: "Hard reset discards uncommitted changes"
+  alert:
+    - pattern: "^sudo "
+      reason: "Elevated privilege operation"
+
+paths:
+  zeroAccess:
+    - "~/.ssh/**"
+    - "~/.gnupg/**"
+  readOnly:
+    - "/etc/passwd"
+    - "/etc/shadow"
+  confirmWrite:
+    - "~/.bashrc"
+    - "~/.zshrc"
+  noDelete:
+    - "~/.claude/settings.json"
+
+projects: {}

@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "daidentity": {
+    "name": "TestDA",
+    "color": "#000000"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun $HOME/.claude/hooks/SecurityValidator.hook.ts"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {},
+  "env": {
+    "PAI_DIR": "$HOME/.claude"
+  }
+}

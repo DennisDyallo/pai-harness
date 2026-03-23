@@ -1,0 +1,10 @@
+{
+  "name": "tool-use",
+  "responses": [
+    {
+      "match": ".*",
+      "text": "I'll help with that.",
+      "tool_use": { "name": "Bash", "input": { "command": "echo hello" } }
+    }
+  ]
+}

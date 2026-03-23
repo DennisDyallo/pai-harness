@@ -1,0 +1,6 @@
+{
+  "name": "basic-session",
+  "responses": [
+    { "match": ".*", "text": "Hello! I'm a mock Claude response for testing." }
+  ]
+}

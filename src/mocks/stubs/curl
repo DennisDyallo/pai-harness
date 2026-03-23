@@ -1,0 +1,12 @@
+#!/bin/bash
+# Stub for curl — intercepts ElevenLabs and other API calls in sandbox
+# Passes through to real curl for non-API URLs
+for arg in "$@"; do
+  if echo "$arg" | grep -q "api.elevenlabs.io\|api.anthropic.com"; then
+    echo "[stub:curl] Intercepted API call: $arg" >> "${PAI_DIR:-/tmp}/harness-stub.log" 2>/dev/null
+    echo '{"status": "stubbed"}'
+    exit 0
+  fi
+done
+# Fall through to real curl for non-API calls
+/usr/bin/curl "$@"
