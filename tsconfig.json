@@ -5,13 +5,14 @@
     "moduleResolution": "bundler",
     "types": ["bun-types"],
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "."
+    "noEmit": true
   },
-  "include": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"]
+  "include": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
