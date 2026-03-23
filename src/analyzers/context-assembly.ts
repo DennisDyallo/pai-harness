@@ -44,11 +44,6 @@ export function assembleContext(paiDir?: string): ContextPiece[] {
 
   // 3. MEMORY.md (first 200 lines)
   const memoryMd = join(dir, 'MEMORY.md');
-  if (!existsSync(memoryMd)) {
-    // Check in projects memory paths
-    const projectMemoryGlob = join(dir, 'projects');
-    // Simple fallback — just check the root MEMORY.md
-  }
   if (existsSync(memoryMd)) {
     const full = readFileSync(memoryMd, 'utf-8');
     const lines = full.split('\n');
@@ -64,8 +59,8 @@ export function assembleContext(paiDir?: string): ContextPiece[] {
 }
 
 export async function assembleContextWithHook(paiDir?: string, hookPath?: string): Promise<ContextPiece[]> {
-  const pieces = assembleContext(paiDir);
   const dir = paiDir ?? process.env.PAI_DIR ?? join(process.env.HOME ?? '', '.claude');
+  const pieces = assembleContext(dir);
 
   // 4. Run LoadContext hook in sandbox and capture stdout
   const loadContextPath = hookPath ?? join(dir, 'hooks', 'LoadContext.hook.ts');

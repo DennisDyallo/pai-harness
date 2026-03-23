@@ -2,8 +2,7 @@
  * Runner — subprocess hook executor via Bun.spawn
  */
 
-import type { HookInput, HookResult, ValidHookOutput } from './types';
-import type { Sandbox } from './types';
+import type { HookInput, HookResult, ValidHookOutput, Sandbox } from './types';
 
 export interface RunOptions {
   hookPath: string;

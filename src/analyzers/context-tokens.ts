@@ -2,11 +2,8 @@
  * Context Tokens — token estimation for context budget analysis
  */
 
-export interface ContextPiece {
-  source: string;
-  content: string;
-  chars: number;
-}
+import type { ContextPiece } from './context-assembly';
+export type { ContextPiece };
 
 export interface ContextPieceWithTokens extends ContextPiece {
   estimatedTokens: number;
@@ -31,7 +28,6 @@ export function analyzeContextBudget(
   pieces: ContextPiece[],
   budgetTokens: number = DEFAULT_BUDGET
 ): ContextBudget {
-  const totalChars = pieces.reduce((sum, p) => sum + p.chars, 0);
   const totalTokens = estimateTokens(pieces.map(p => p.content).join(''));
 
   const piecesWithTokens: ContextPieceWithTokens[] = pieces.map(p => {
