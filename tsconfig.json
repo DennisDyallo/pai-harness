@@ -11,7 +11,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@pai-lib/*": ["/Users/Dennis.Dyall/.claude/hooks/lib/*"],
+      "@pai-hooks/*": ["/Users/Dennis.Dyall/.claude/hooks/*"]
+    }
   },
   "include": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]

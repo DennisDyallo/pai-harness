@@ -4,6 +4,7 @@
  */
 
 import { join } from "node:path";
+import { resolveMemoryStatePath, resolveSettingsPath } from "../src/core/paths";
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -73,8 +74,7 @@ switch (command) {
 			const { validateSettings } = await import(
 				"../src/sync/settings-validator"
 			);
-			const settingsPath =
-				args[2] ?? join(process.env.HOME ?? "", ".claude", "settings.json");
+			const settingsPath = args[2] ?? resolveSettingsPath();
 			const result = validateSettings(settingsPath);
 			console.log(`Settings validation: ${result.valid ? "PASS" : "FAIL"}`);
 			console.log(
@@ -85,9 +85,7 @@ switch (command) {
 			}
 			process.exit(result.valid ? 0 : 1);
 		} else if (subcommand === "state") {
-			const paiDir =
-				process.env.PAI_DIR ?? join(process.env.HOME ?? "", ".claude");
-			const stateDir = join(paiDir, "MEMORY", "STATE");
+			const stateDir = resolveMemoryStatePath();
 			const { readdirSync, readFileSync, existsSync } = await import("node:fs");
 			if (!existsSync(stateDir)) {
 				console.error(`State directory not found: ${stateDir}`);

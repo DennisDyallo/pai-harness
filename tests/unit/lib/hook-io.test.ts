@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
-import { hookLog } from "../../../../../.claude/hooks/lib/hook-io";
+import { hookLog } from "@pai-lib/hook-io";
 
 describe("hookLog", () => {
 	let spy: ReturnType<typeof spyOn>;

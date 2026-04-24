@@ -68,6 +68,8 @@ export interface SandboxOptions {
 	seedFiles?: Record<string, string>;
 	env?: Record<string, string>;
 	paiDir?: string;
+	seedFromProduction?: boolean; // Copy minimal stubs from production
+	useDynamicDirs?: boolean; // Discover dirs from production instead of static list
 }
 
 // Sandbox instance

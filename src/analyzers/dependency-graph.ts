@@ -7,6 +7,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
+import { resolveHooksDir } from "../core/paths";
 
 export interface HookNode {
 	name: string;
@@ -40,6 +41,25 @@ const FS_WRITE_PATTERN =
 const FS_EXISTS_PATTERN =
 	/existsSync\s*\(\s*(?:join\s*\([^)]*\)|`[^`]*`|'[^']*'|"[^"]*")/g;
 
+const NON_FILE_ARGS = new Set(["/dev/stdin", "utf-8", "utf8"]);
+
+const RELEVANT_PATH_KEYWORDS = [
+	"MEMORY",
+	"STATE",
+	"settings",
+	"CLAUDE",
+	".json",
+	".md",
+	".yaml",
+	".yml",
+	"learning",
+	"work",
+];
+
+function isRelevantPath(path: string): boolean {
+	return RELEVANT_PATH_KEYWORDS.some((keyword) => path.includes(keyword));
+}
+
 function extractPaths(source: string, pattern: RegExp): string[] {
 	const paths: string[] = [];
 	const matches = source.matchAll(pattern);
@@ -50,24 +70,8 @@ function extractPaths(source: string, pattern: RegExp): string[] {
 		if (stringLiterals) {
 			for (const lit of stringLiterals) {
 				const cleaned = lit.slice(1, -1);
-				// Skip /dev/stdin, common non-file args
-				if (
-					cleaned === "/dev/stdin" ||
-					cleaned === "utf-8" ||
-					cleaned === "utf8"
-				)
-					continue;
-				// Focus on MEMORY/STATE paths and meaningful file references
-				if (
-					cleaned.includes("MEMORY") ||
-					cleaned.includes("STATE") ||
-					cleaned.includes("settings") ||
-					cleaned.includes("CLAUDE") ||
-					cleaned.includes(".json") ||
-					cleaned.includes(".md") ||
-					cleaned.includes(".yaml") ||
-					cleaned.includes(".yml")
-				) {
+				if (NON_FILE_ARGS.has(cleaned)) continue;
+				if (isRelevantPath(cleaned)) {
 					paths.push(cleaned);
 				}
 			}
@@ -80,16 +84,9 @@ function extractPaths(source: string, pattern: RegExp): string[] {
 			if (parts) {
 				const joinedParts = parts
 					.map((p) => p.slice(1, -1))
-					.filter((p) => p !== "utf-8");
+					.filter((p) => !NON_FILE_ARGS.has(p));
 				const joined = joinedParts.join("/");
-				if (
-					joined.includes("MEMORY") ||
-					joined.includes("STATE") ||
-					joined.includes("settings") ||
-					joined.includes("learning") ||
-					joined.includes("work") ||
-					joined.includes(".json")
-				) {
+				if (isRelevantPath(joined)) {
 					paths.push(joined);
 				}
 			}
@@ -111,7 +108,7 @@ function scanHookFile(hookPath: string): HookNode {
 }
 
 export function generateGraph(hooksDir?: string): DependencyGraph {
-	const dir = hooksDir ?? join(process.env.HOME ?? "", ".claude", "hooks");
+	const dir = hooksDir ?? resolveHooksDir();
 	if (!existsSync(dir)) return { nodes: [], edges: [] };
 
 	const hookFiles = readdirSync(dir).filter((f) => f.endsWith(".hook.ts"));

@@ -3,8 +3,8 @@
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { homedir } from "node:os";
 import { basename, join } from "node:path";
+import { resolveProjectsDir } from "../core/paths";
 
 export interface SessionSummary {
 	id: string;
@@ -31,7 +31,7 @@ export interface ErrorEntry extends ParsedEntry {
 }
 
 export function listSessions(projectDir?: string): SessionSummary[] {
-	const baseDir = projectDir ?? join(homedir(), ".claude", "projects");
+	const baseDir = projectDir ?? resolveProjectsDir();
 	if (!existsSync(baseDir)) return [];
 
 	const sessions: SessionSummary[] = [];

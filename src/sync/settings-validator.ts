@@ -15,10 +15,17 @@ export interface ValidationResult {
 	issues: ValidationIssue[];
 	hookCount: number;
 	sectionsFound: string[];
+	learnedSchema?: LearnedSchema;
 }
 
-const REQUIRED_SECTIONS = ["env", "permissions", "hooks"];
-const RECOMMENDED_SECTIONS = ["daidentity"];
+export interface LearnedSchema {
+	topLevelKeys: Map<string, string>; // key → detected type
+	hookEvents: string[];
+	requiredSections: string[];
+	warnings: string[];
+}
+
+const MINIMAL_REQUIRED = ["hooks", "permissions"];
 
 interface HookEntry {
 	type: string;
@@ -28,6 +35,49 @@ interface HookEntry {
 interface HookGroup {
 	matcher?: string;
 	hooks: HookEntry[];
+}
+
+/**
+ * Learn the schema from the settings file itself instead of comparing against
+ * a static expected schema. This adapts to production evolution.
+ */
+function learnSchema(settings: Record<string, unknown>): LearnedSchema {
+	const topLevelKeys = new Map<string, string>();
+
+	for (const [key, value] of Object.entries(settings)) {
+		if (value === null) {
+			topLevelKeys.set(key, "null");
+		} else if (Array.isArray(value)) {
+			topLevelKeys.set(key, "array");
+		} else {
+			topLevelKeys.set(key, typeof value);
+		}
+	}
+
+	// Deep validate hooks structure
+	const hookEvents: string[] = [];
+	if (settings.hooks && typeof settings.hooks === "object") {
+		for (const event of Object.keys(settings.hooks as object)) {
+			hookEvents.push(event);
+		}
+	}
+
+	const warnings: string[] = [];
+
+	// Check for unexpected top-level types (values that should be objects but aren't)
+	if (settings.hooks && typeof settings.hooks !== "object") {
+		warnings.push("hooks should be an object");
+	}
+	if (settings.permissions && typeof settings.permissions !== "object") {
+		warnings.push("permissions should be an object");
+	}
+
+	return {
+		topLevelKeys,
+		hookEvents,
+		requiredSections: MINIMAL_REQUIRED,
+		warnings,
+	};
 }
 
 export function validateSettings(settingsPath: string): ValidationResult {
@@ -56,11 +106,15 @@ export function validateSettings(settingsPath: string): ValidationResult {
 		return { valid: false, issues, hookCount, sectionsFound };
 	}
 
-	// Check required sections
-	for (const section of REQUIRED_SECTIONS) {
-		if (section in settings) {
-			sectionsFound.push(section);
-		} else {
+	// Learn the schema from the settings file
+	const learnedSchema = learnSchema(settings);
+
+	// Record all sections found
+	sectionsFound.push(...learnedSchema.topLevelKeys.keys());
+
+	// Check minimal required sections
+	for (const section of MINIMAL_REQUIRED) {
+		if (!(section in settings)) {
 			issues.push({
 				severity: "error",
 				field: section,
@@ -69,16 +123,13 @@ export function validateSettings(settingsPath: string): ValidationResult {
 		}
 	}
 
-	for (const section of RECOMMENDED_SECTIONS) {
-		if (section in settings) {
-			sectionsFound.push(section);
-		} else {
-			issues.push({
-				severity: "warning",
-				field: section,
-				message: `Recommended section '${section}' is missing`,
-			});
-		}
+	// Add schema warnings as validation warnings
+	for (const warning of learnedSchema.warnings) {
+		issues.push({
+			severity: "warning",
+			field: "schema",
+			message: warning,
+		});
 	}
 
 	// Validate hooks — check that commands point to existing files
@@ -149,5 +200,5 @@ export function validateSettings(settingsPath: string): ValidationResult {
 	}
 
 	const hasErrors = issues.some((i) => i.severity === "error");
-	return { valid: !hasErrors, issues, hookCount, sectionsFound };
+	return { valid: !hasErrors, issues, hookCount, sectionsFound, learnedSchema };
 }

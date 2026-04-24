@@ -8,8 +8,8 @@ import {
 	getIdentity,
 	getPrincipal,
 	getPrincipalName,
-} from "../../../../../.claude/hooks/lib/identity";
-import { getSettingsPath } from "../../../../../.claude/hooks/lib/paths";
+} from "@pai-lib/identity";
+import { getSettingsPath } from "@pai-lib/paths";
 
 // identity.ts computes SETTINGS_PATH = getSettingsPath() at module load time.
 // When running with other test files, identity.ts may load before we can set

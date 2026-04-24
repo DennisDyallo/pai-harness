@@ -6,7 +6,7 @@ import {
 	getPaiDir,
 	getSettingsPath,
 	paiPath,
-} from "../../../../../.claude/hooks/lib/paths";
+} from "@pai-lib/paths";
 
 describe("paths", () => {
 	const savedEnv: Record<string, string | undefined> = {};

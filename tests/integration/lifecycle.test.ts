@@ -33,7 +33,13 @@ describe("Full Session Lifecycle", () => {
 	const sessionId = `lifecycle-test-${Date.now()}`;
 
 	beforeAll(() => {
-		sandbox = createSandbox();
+		sandbox = createSandbox({
+			seedFiles: {
+				"skills/PAI/SKILL.md": "# PAI Skills\nMinimal test context.",
+				"skills/PAI/AISTEERINGRULES.md": "# AI Steering Rules\nTest.",
+				"skills/PAI/USER/AISTEERINGRULES.md": "# User AI Steering Rules\nTest.",
+			},
+		});
 		// Mock inference for any hooks that use it
 		sandbox.env.PAI_INFERENCE_MOCK = join(sandbox.dir, "mock-inference.json");
 		writeFileSync(

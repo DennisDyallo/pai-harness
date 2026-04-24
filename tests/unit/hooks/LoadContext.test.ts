@@ -10,7 +10,13 @@ describe("LoadContext", () => {
 	let sandbox: Sandbox;
 
 	beforeEach(() => {
-		sandbox = createSandbox();
+		sandbox = createSandbox({
+			seedFiles: {
+				"skills/PAI/SKILL.md": "# PAI Skills\nMinimal test context.",
+				"skills/PAI/AISTEERINGRULES.md": "# AI Steering Rules\nTest.",
+				"skills/PAI/USER/AISTEERINGRULES.md": "# User AI Steering Rules\nTest.",
+			},
+		});
 	});
 
 	afterEach(() => {
@@ -47,9 +53,7 @@ describe("LoadContext", () => {
 				version: "1.0",
 				hooks: {},
 				permissions: {},
-				loadAtStartup: {
-					files: ["test-context.md"],
-				},
+				contextFiles: ["test-context.md"],
 			},
 			seedFiles: {
 				"test-context.md": "# Test Context\nThis is injected at startup.",
