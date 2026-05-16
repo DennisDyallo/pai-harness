@@ -82,7 +82,7 @@ A **PreToolUse hook** that blocks `Write`/`Edit`/`MultiEdit` (not Bash) from tou
 
 It's structural: runs on every tool call, persists across sessions. Same zones are reused by ShadowRelease as the "do not publish" list — one source of truth for "what's private."
 
-**Verdict for you:** Genuinely useful but lower priority than I first said — your vault-symlinked setup already creates de facto containment (writes flow to vault). The real win is the **single shared zone definition** that ShadowRelease can also read. Skip unless you're going to publish a public PAI fork.
+**Verdict for you:** Genuinely useful — and on reflection (Cato catch 2026-05-16), more important than I first framed. My earlier rationale that "vault-symlinked setup creates de facto containment" was **backwards**: a symlinked vault actually *increases* damage radius, because mistaken Write/Edit/MultiEdit calls land directly in the source-of-truth vault that holds your TELOS, identity, learning history, and credentials. There is no copy-and-undo barrier. The real win of ContainmentGuard is exactly the write-boundary enforcement that the vault topology removes. Reclassified as **worth porting in Phase C** alongside the Algorithm weave — small hook, big damage-radius reduction. Defining the zone list also gives ShadowRelease its "do not publish" source of truth as a free side-effect.
 
 ### ShadowRelease — what it actually is
 A **publishing pipeline for sharing a sanitized PAI install publicly** (think: open-sourcing your `.claude/` minus the personal bits). Stages into `~/.claude/PAI_RELEASES/PAI_Release_v{X}/` and runs 5 gates:
@@ -346,6 +346,32 @@ This is identical in shape to how `SiasReview` already operates on weekly cadenc
 - **One-shot, not recurring:** A single 30-day fire is enough. If we like the pattern, the next experiment gets its own one-shot.
 - **Auto-graduates into `/Evolve`:** Surviving cherry-picks become candidates for permanent behavioral rules via your existing graduation path.
 
+### Baseline contamination caveat (Cato catch 2026-05-16)
+
+**Honesty correction:** Round 6 added Phase A (Algorithm consolidation + E1–E5 aliases) and a CLAUDE.md "Active Experiments" section, both shipping in the same window as the 4-skill port. That **contaminates the experiment baseline** — any satisfaction or rating shift over the next 30 days could be attributable to (a) the new skills, (b) Phase A, or (c) the CLAUDE.md change priming Sia's attention. The retrospective on 2026-06-15 must treat this as a confounded experiment, not a clean A/B test, and apply the following attribution discipline:
+
+1. **Prefer per-skill usage counts** over aggregate satisfaction — they're directly attributable to a specific port.
+2. **Discount aggregate satisfaction shifts** by ≥30% when interpreting them as cherry-pick value; some non-trivial fraction belongs to Phase A and the framing change.
+3. **Look for skill-specific quotes** in learning signals (`"used ISA"`, `"BPE caught"`) rather than relying on coincidence-of-timing.
+4. **Predict explicitly:** Phase A and CLAUDE.md changes are themselves small experiments — note any sessions where the E1–E5 aliases or the "Infrastructure Is the Memory" line caused a behavior shift, so the retrospective can separately credit/debit them.
+
+This is not a reason to re-sequence the work — that ship has sailed — but the 2026-06-15 review must call out attribution uncertainty in its summary, not paper over it.
+
+---
+
+## Cato findings applied (2026-05-16)
+
+This plan was audited by Cato (real cross-vendor pass: `codex exec --sandbox read-only` on gpt-5.5 via ChatGPT Max). Findings persisted to `~/.claude/MEMORY/VERIFICATION/cato-findings.jsonl`. Three actionable findings were corrected inline:
+
+1. **Phase C bullet 7** — was "Cato-via-Gemini integration" (contradicting Round 6's decision to make codex primary). Corrected to "Cato-via-codex integration with Gemini-as-Cato as documented fallback."
+2. **ContainmentGuard verdict** — was "vault symlink creates de facto containment, skip ContainmentGuard." Corrected to acknowledge symlinked vault *increases* damage radius and reclassified ContainmentGuard as worth porting in Phase C.
+3. **Round 5 satisfaction layer** — added explicit baseline-contamination caveat with attribution discipline for the 2026-06-15 retrospective.
+
+Two findings remain as permanent record (not corrected inline, intentionally retained for the retrospective):
+
+- **"Straight copy, no regressions expected" optimism** — Cato is right that there's no sandboxed dry-run before live install. Leaving as a known limitation; the 30-day window will reveal any latent assumption-conflicts.
+- **Inventory counts not pinned to a reproducible command** — true but cosmetic; the plan's hour estimates were close enough that re-inventory would not have changed the decision tree.
+
 ---
 
 ## Round 6: Weaving v5 Algorithm into the existing PAI framework
@@ -502,7 +528,7 @@ Three sequencing options considered:
 4. Sonnet upgrade + `RESEARCH` mode in CapabilityRecommender (30 min)
 5. Rule 1 live-probe codification in CLAUDE.md + Algorithm skill (15 min)
 6. Rule 2 Advisor formalization (30 min)
-7. Rule 2a Cato-via-Gemini integration (45 min)
+7. Rule 2a Cato-via-codex integration (45 min, with Gemini-as-Cato wired as documented fallback)
 
 **Rationale:** Phase A unblocks ISA. Phase C waits for the cherry-pick experiment data so we know if (a) the cherry-picks succeeded and (b) which weaves the data actually justifies. If the 30-day review shows ISA underused, we'd skip the closed capability list (less value without ISA adoption). If it shows BPE caught lots of over-prompting in CLAUDE.md, the live-probe rule becomes higher priority.
 
