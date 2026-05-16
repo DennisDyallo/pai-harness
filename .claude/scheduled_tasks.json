@@ -1,0 +1,13 @@
+{
+  "tasks": [
+    {
+      "id": "ee33f190",
+      "cron": "7 9 15 6 *",
+      "prompt": "Run the v5 cherry-pick 30-day retrospective. Read ~/.claude/MEMORY/STATE/v5-cherrypick-baseline.json for the experiment baseline + predictions. Then synthesize SiasReview-style: for each ported skill (ArXiv, ISA, BitterPillEngineering, Migrate), check the binary signals (used_at_all, used_more_than_once, caused_rating_ge_7, caused_rating_le_3, predicted_accurately) by grepping session logs at ~/.claude/projects/*/ and reading ~/.claude/MEMORY/LEARNING/ALGORITHM/ + learning-index.json. Compute prediction-vs-reality delta. Write findings to ~/.claude/MEMORY/WISDOM/FRAMES/2026-06-15_v5_cherrypick_review.md with: per-skill signal table, prediction calibration, one paragraph \"was it worth it?\", one paragraph \"what to port next or revert\", apply decision rules (remove if 0 usage AND 0 ratings; adjust if ≥3 low ratings; graduate to /Evolve if ≥3 high ratings AND ≥5 uses). Plan reference: ~/Code/other/pai-harness/Plans/so-as-you-know-atomic-lark.md",
+      "createdAt": 1778948278617,
+      "createdBySessionId": "126f6c0a-d2e2-4be5-b676-889e644cf972",
+      "createdByPid": 7382,
+      "createdByProcStart": "Sat May 16 13:42:26 2026"
+    }
+  ]
+}
