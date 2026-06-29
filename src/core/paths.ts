@@ -60,3 +60,29 @@ export function resolveMemoryStatePath(): string {
 export function resolveMemoryLearningPath(): string {
 	return join(resolveMemoryDir(), "LEARNING");
 }
+
+/**
+ * Resolve the HOME directory, honoring an override.
+ *
+ * Resolution order:
+ * 1. HOME env var (set by sandbox isolation)
+ * 2. ~ (os.homedir())
+ *
+ * Used so a cloned sandbox can point HOME at the clone root and have
+ * `~/.claude.json` resolve to the synthetic copy instead of the live one.
+ */
+export function resolveHome(): string {
+	return process.env.HOME || homedir();
+}
+
+/**
+ * Resolve the path to `~/.claude.json` (the global Claude Code config that
+ * holds the `mcpServers` block). Respects the HOME override so a clone's
+ * synthetic .claude.json is found instead of the live one.
+ *
+ * Note: this deliberately keys off HOME (not CLAUDE_CONFIG_DIR), because
+ * `.claude.json` lives in the user's home directory, not inside `.claude/`.
+ */
+export function resolveClaudeJsonPath(): string {
+	return join(resolveHome(), ".claude.json");
+}

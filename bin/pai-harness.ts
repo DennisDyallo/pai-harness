@@ -23,6 +23,7 @@ Usage:
   pai-harness validate settings                 Schema validation
   pai-harness validate output                   Verify hook outputs match schema
   pai-harness context --tokens                  Show context assembly + tokens
+  pai-harness context-budget [--live-mcp] [--calibration N]  Ranked startup context cost table
   pai-harness graph [--dot|--check]             Hook dependency graph
   pai-harness bench [--hook <name>]             Benchmark hooks
   pai-harness mock-api start [--port N] [--scenario name]  Start mock API server
@@ -131,6 +132,35 @@ switch (command) {
 				console.log(`[${piece.source}] ${piece.chars} chars`);
 			}
 		}
+		break;
+	}
+
+	case "context-budget": {
+		const { assembleContext, mcpCostsToPieces } = await import(
+			"../src/analyzers/context-assembly"
+		);
+		const { analyzeContextBudget, formatBudgetTable } = await import(
+			"../src/analyzers/context-tokens"
+		);
+		const pieces = assembleContext();
+
+		// MCP/plugin tool schema costs. Gated behind --live-mcp because it
+		// spawns server subprocesses. NEVER launches claude --bare.
+		if (args.includes("--live-mcp")) {
+			const { measureAllMcpServers } = await import(
+				"../src/analyzers/mcp-schema-cost"
+			);
+			const costs = await measureAllMcpServers();
+			pieces.push(...mcpCostsToPieces(costs));
+		}
+
+		// Optional calibration factor (e.g. --calibration 1.1)
+		const calFlag = args.indexOf("--calibration");
+		const calibration =
+			calFlag !== -1 ? Number.parseFloat(args[calFlag + 1]) || 1.0 : 1.0;
+
+		const budget = analyzeContextBudget(pieces, 200_000, calibration);
+		console.log(formatBudgetTable(budget));
 		break;
 	}
 

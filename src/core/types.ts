@@ -70,6 +70,8 @@ export interface SandboxOptions {
 	paiDir?: string;
 	seedFromProduction?: boolean; // Copy minimal stubs from production
 	useDynamicDirs?: boolean; // Discover dirs from production instead of static list
+	cloneFromProduction?: boolean; // Full-fidelity clone of context-relevant live config
+	projectClaudeMd?: string; // Path to a project CLAUDE.md to include in the clone
 }
 
 // Sandbox instance

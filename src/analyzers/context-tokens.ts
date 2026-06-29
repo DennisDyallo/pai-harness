@@ -21,24 +21,42 @@ export interface ContextBudget {
 const CHARS_PER_TOKEN = 3.5;
 const DEFAULT_BUDGET = 200_000;
 
-export function estimateTokens(text: string): number {
-	return Math.ceil(text.length / CHARS_PER_TOKEN);
+/**
+ * Estimate tokens from text length using the 3.5 chars/token baseline.
+ *
+ * `calibrationFactor` (default 1.0) scales the baseline estimate so real
+ * `/context` numbers can be calibrated later without changing the baseline —
+ * e.g. a factor of 1.1 means the heuristic was undercounting by ~10%.
+ */
+export function estimateTokens(text: string, calibrationFactor = 1.0): number {
+	return Math.ceil((text.length / CHARS_PER_TOKEN) * calibrationFactor);
 }
 
 export function analyzeContextBudget(
 	pieces: ContextPiece[],
 	budgetTokens: number = DEFAULT_BUDGET,
+	calibrationFactor = 1.0,
 ): ContextBudget {
-	const totalTokens = estimateTokens(pieces.map((p) => p.content).join(""));
-
 	const piecesWithTokens: ContextPieceWithTokens[] = pieces.map((p) => {
-		const estimatedTokens = estimateTokens(p.content);
+		const estimatedTokens = estimateTokens(p.content, calibrationFactor);
 		return {
 			...p,
 			estimatedTokens,
-			percentage: totalTokens > 0 ? (estimatedTokens / totalTokens) * 100 : 0,
+			percentage: 0, // filled in below once the total is known
 		};
 	});
+
+	// Total is the SUM of the per-piece (independently ceiled) estimates, so the
+	// ranked table's cumulative column reconciles exactly with the total — rather
+	// than re-estimating from concatenated content (which would round differently).
+	const totalTokens = piecesWithTokens.reduce(
+		(sum, p) => sum + p.estimatedTokens,
+		0,
+	);
+	for (const p of piecesWithTokens) {
+		p.percentage =
+			totalTokens > 0 ? (p.estimatedTokens / totalTokens) * 100 : 0;
+	}
 
 	return {
 		pieces: piecesWithTokens,
@@ -49,32 +67,42 @@ export function analyzeContextBudget(
 }
 
 export function formatBudgetTable(budget: ContextBudget): string {
+	const header = `${"#".padStart(3)}  ${"Source".padEnd(35)} ${"Chars".padStart(8)} ${"Tokens".padStart(8)} ${"%200K".padStart(7)} ${"Cum%".padStart(7)}`;
 	const lines: string[] = [
 		"Context Budget Analysis",
-		"=".repeat(60),
+		"=".repeat(header.length),
 		"",
-		`${"Source".padEnd(35)} ${"Tokens".padStart(8)} ${"%".padStart(6)}`,
-		"-".repeat(60),
+		header,
+		"-".repeat(header.length),
 	];
 
-	for (const piece of budget.pieces.sort(
+	const sorted = [...budget.pieces].sort(
 		(a, b) => b.estimatedTokens - a.estimatedTokens,
-	)) {
+	);
+
+	let cumulativeTokens = 0;
+	let rank = 1;
+	for (const piece of sorted) {
+		cumulativeTokens += piece.estimatedTokens;
 		const name =
-			piece.source.length > 34
-				? `${piece.source.slice(0, 31)}...`
+			piece.source.length > 35
+				? `${piece.source.slice(0, 32)}...`
 				: piece.source;
+		const pctOfBudget = (piece.estimatedTokens / budget.budgetTokens) * 100;
+		const cumPctOfBudget = (cumulativeTokens / budget.budgetTokens) * 100;
 		lines.push(
-			`${name.padEnd(35)} ${piece.estimatedTokens.toLocaleString().padStart(8)} ${piece.percentage.toFixed(1).padStart(5)}%`,
+			`${String(rank).padStart(3)}  ${name.padEnd(35)} ${piece.chars.toLocaleString().padStart(8)} ${piece.estimatedTokens.toLocaleString().padStart(8)} ${pctOfBudget.toFixed(2).padStart(6)}% ${cumPctOfBudget.toFixed(2).padStart(6)}%`,
 		);
+		rank++;
 	}
 
-	lines.push("-".repeat(60));
+	lines.push("-".repeat(header.length));
+	const totalChars = budget.pieces.reduce((s, p) => s + p.chars, 0);
 	lines.push(
-		`${"TOTAL".padEnd(35)} ${budget.totalTokens.toLocaleString().padStart(8)} ${budget.utilizationPercent.toFixed(1).padStart(5)}%`,
+		`${"".padStart(3)}  ${"TOTAL".padEnd(35)} ${totalChars.toLocaleString().padStart(8)} ${budget.totalTokens.toLocaleString().padStart(8)} ${budget.utilizationPercent.toFixed(2).padStart(6)}%`,
 	);
 	lines.push(
-		`${"Budget".padEnd(35)} ${budget.budgetTokens.toLocaleString().padStart(8)}`,
+		`${"".padStart(3)}  ${"Budget".padEnd(35)} ${"".padStart(8)} ${budget.budgetTokens.toLocaleString().padStart(8)}`,
 	);
 	lines.push("");
 

@@ -32,6 +32,18 @@ describe("Token Estimation", () => {
 		expect(tokens).toBeGreaterThan(100);
 		expect(tokens).toBeLessThan(200);
 	});
+
+	test("calibration factor defaults to 1.0 (baseline unchanged)", () => {
+		const text = "a".repeat(3500);
+		expect(estimateTokens(text)).toBe(estimateTokens(text, 1.0));
+		expect(estimateTokens(text)).toBe(1000);
+	});
+
+	test("calibration factor scales the estimate", () => {
+		const text = "a".repeat(3500); // 1000 tokens at baseline
+		expect(estimateTokens(text, 1.1)).toBe(Math.ceil(1000 * 1.1));
+		expect(estimateTokens(text, 0.9)).toBe(Math.ceil(1000 * 0.9));
+	});
 });
 
 describe("Context Budget Analysis", () => {
@@ -76,6 +88,16 @@ describe("Context Budget Analysis", () => {
 		expect(budget.budgetTokens).toBe(5000);
 		// With small budget, utilization should be higher
 		expect(budget.utilizationPercent).toBeGreaterThan(50);
+	});
+
+	test("calibration factor flows through to budget totals", () => {
+		const base = analyzeContextBudget(samplePieces, 200000, 1.0);
+		const calibrated = analyzeContextBudget(samplePieces, 200000, 1.2);
+		expect(calibrated.totalTokens).toBeGreaterThan(base.totalTokens);
+		// ~20% higher (allow rounding)
+		expect(calibrated.totalTokens).toBeGreaterThanOrEqual(
+			Math.floor(base.totalTokens * 1.19),
+		);
 	});
 
 	test("handles empty pieces", () => {
