@@ -1,0 +1,20 @@
+--- /Users/Dennis.Dyall/.claude/skills/Algorithm/SKILL.md	2026-05-16 18:15:53
++++ /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/skills/Algorithm/SKILL.md	2026-06-30 01:31:09
+@@ -80,4 +80,17 @@
+ 6. **VERIFY** — Prove every ISC criterion passes with evidence
+ 7. **LEARN** — Reflect, extract improvements
+ 
++## Reference (on-demand depth)
++
++Detailed reference relocated here from PAI/SKILL.md during the v5 context de-bloat. Read the file that matches your need:
++
++| Topic | File |
++|-------|------|
++| ISC requirements, scale tiers, the standalone Quality Gate + decomposition decision | `Reference/ISC.md` |
++| PRD lifecycle, template, frontmatter, per-phase behavior, multi-iteration, loop/worker execution modes, agent teams, sync rules | `Reference/PRD.md` |
++| The Algorithm concept, implementation, execution guidance/scenarios, Plan Mode integration, settings.json config | `Reference/Concept.md` |
++| The full 25-capability registry, combination guidance, the effort-scaled Capability Audit format, agent invocation mechanics, background agents | `Reference/Capabilities.md` |
++
++The always-on behavioral rules (mandatory output format, phase discipline, no-silent-stalls, no-agents-for-instant-ops) live inline in PAI/SKILL.md and remain authoritative.
++
+ Full reference: `SkillSearch('algorithm reference')`
