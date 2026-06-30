@@ -1,0 +1,28 @@
+--- /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/settings.json.run3.bak	2026-06-30 11:06:51
++++ /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/settings.json	2026-06-30 11:10:36
+@@ -301,13 +301,13 @@
+     "command": "$PAI_DIR/statusline-command.sh"
+   },
+   "enabledPlugins": {
+-    "context7@claude-plugins-official": true,
++    "context7@claude-plugins-official": false,
+     "claude-md-management@claude-plugins-official": true,
+     "csharp-lsp@claude-plugins-official": true,
+     "playground@claude-plugins-official": true,
+     "frontend-design@claude-plugins-official": true,
+     "playwright@claude-plugins-official": true,
+-    "atlassian@claude-plugins-official": true,
++    "atlassian@claude-plugins-official": false,
+     "code-review@claude-plugins-official": true,
+     "typescript-lsp@claude-plugins-official": true,
+     "pyright-lsp@claude-plugins-official": true,
+@@ -754,8 +754,7 @@
+   "contextFiles": [],
+   "loadAtStartup": {
+     "files": [
+-      "skills/PAI/USER/DAIDENTITY.md",
+-      "PAI/ALGORITHM-SUMMARY.md"
++      "skills/PAI/USER/DAIDENTITY.md"
+     ]
+   },
+   "daidentity": {

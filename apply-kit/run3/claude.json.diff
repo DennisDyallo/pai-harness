@@ -1,0 +1,15 @@
+--- /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/.claude.json.run3.bak	2026-06-30 11:06:51
++++ /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/.claude.json	2026-06-30 11:10:01
+@@ -7,11 +7,6 @@
+         "chrome-devtools-mcp@latest"
+       ],
+       "env": {}
+-    },
+-    "vslsp": {
+-      "type": "stdio",
+-      "command": "/Users/Dennis.Dyall/.local/bin/vslsp-mcp",
+-      "args": []
+     }
+   }
+ }
+\ No newline at end of file

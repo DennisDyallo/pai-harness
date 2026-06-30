@@ -23,7 +23,7 @@ Usage:
   pai-harness validate settings                 Schema validation
   pai-harness validate output                   Verify hook outputs match schema
   pai-harness context --tokens                  Show context assembly + tokens
-  pai-harness context-budget [--live-mcp] [--calibration N]  Ranked startup context cost table
+  pai-harness context-budget [--live-mcp [--include-plugins [--include-disabled-plugins]]] [--calibration N]  Ranked startup context cost table
   pai-harness graph [--dot|--check]             Hook dependency graph
   pai-harness bench [--hook <name>]             Benchmark hooks
   pai-harness mock-api start [--port N] [--scenario name]  Start mock API server
@@ -147,11 +147,26 @@ switch (command) {
 		// MCP/plugin tool schema costs. Gated behind --live-mcp because it
 		// spawns server subprocesses. NEVER launches claude --bare.
 		if (args.includes("--live-mcp")) {
-			const { measureAllMcpServers } = await import(
-				"../src/analyzers/mcp-schema-cost"
-			);
-			const costs = await measureAllMcpServers();
-			pieces.push(...mcpCostsToPieces(costs));
+			// --include-plugins also measures plugin-provided .mcp.json servers
+			// (context7, playwright, atlassian) read from the plugin cache, not
+			// just .claude.json mcpServers (chrome-devtools, vslsp). By default it
+			// HONORS settings.json enabledPlugins (disabled plugins are not
+			// measured). Pass --include-disabled-plugins for a "before" baseline.
+			if (args.includes("--include-plugins")) {
+				const { measureAllServersIncludingPlugins } = await import(
+					"../src/analyzers/mcp-schema-cost"
+				);
+				const costs = await measureAllServersIncludingPlugins({
+					includeDisabledPlugins: args.includes("--include-disabled-plugins"),
+				});
+				pieces.push(...mcpCostsToPieces(costs));
+			} else {
+				const { measureAllMcpServers } = await import(
+					"../src/analyzers/mcp-schema-cost"
+				);
+				const costs = await measureAllMcpServers();
+				pieces.push(...mcpCostsToPieces(costs));
+			}
 		}
 
 		// Optional calibration factor (e.g. --calibration 1.1)

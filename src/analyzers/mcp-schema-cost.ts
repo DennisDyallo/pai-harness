@@ -17,7 +17,11 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { resolveClaudeJsonPath, resolvePaiDir } from "../core/paths";
+import {
+	resolveClaudeJsonPath,
+	resolvePaiDir,
+	resolveSettingsPath,
+} from "../core/paths";
 import type { McpSchemaCost } from "./context-assembly";
 
 export type { McpSchemaCost };
@@ -58,8 +62,10 @@ export function readMcpServers(claudeJsonPath?: string): McpServerConfig[] {
 			servers as Record<string, Record<string, unknown>>,
 		)) {
 			if (!cfg || typeof cfg !== "object") continue;
-			const command = cfg.command;
-			if (typeof command !== "string") continue; // skip url/http transports
+			// HTTP/SSE transports have a `url` and no spawnable `command`. Surface
+			// them with command "" so the measurer flags them remote-no-command
+			// (unmeasured) rather than silently dropping them.
+			const command = typeof cfg.command === "string" ? cfg.command : "";
 			out.push({
 				name,
 				command,
@@ -95,6 +101,143 @@ export function readInstalledPlugins(paiDir?: string): string[] {
 		return [];
 	} catch {
 		return [];
+	}
+}
+
+/**
+ * One installed plugin, resolved from `plugins/installed_plugins.json`.
+ * `key` is the manifest key (e.g. `context7@claude-plugins-official`);
+ * `installPath` is the exact cache dir for the ACTIVE install (deterministic —
+ * no directory-traversal guessing of which hash is current).
+ */
+export interface InstalledPlugin {
+	key: string;
+	name: string; // the part before `@`
+	installPath: string;
+}
+
+/**
+ * Resolve installed plugins (key + name + active installPath) from the manifest
+ * `plugins/installed_plugins.json`. The manifest records the canonical install
+ * path per plugin, so we never have to guess which cache hash is active.
+ */
+export function readInstalledPluginPaths(paiDir?: string): InstalledPlugin[] {
+	const dir = paiDir ?? resolvePaiDir();
+	const path = join(dir, "plugins", "installed_plugins.json");
+	if (!existsSync(path)) return [];
+	try {
+		const parsed = JSON.parse(readFileSync(path, "utf-8"));
+		const plugins = parsed.plugins;
+		if (!plugins || typeof plugins !== "object") return [];
+		const out: InstalledPlugin[] = [];
+		for (const [key, entry] of Object.entries(
+			plugins as Record<string, unknown>,
+		)) {
+			// Each value is an array of install records; take the first with an
+			// installPath (manifest lists active install(s) for the key).
+			const records = Array.isArray(entry) ? entry : [];
+			const record = records.find(
+				(r) =>
+					r &&
+					typeof r === "object" &&
+					typeof (r as { installPath?: unknown }).installPath === "string",
+			) as { installPath: string } | undefined;
+			if (!record) continue;
+			const name = key.split("@")[0];
+			out.push({ key, name, installPath: record.installPath });
+		}
+		return out;
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Read plugin-provided MCP server definitions from the plugin cache.
+ *
+ * Plugin MCP servers are NOT in `.claude.json` — each installed plugin ships a
+ * `.mcp.json` under its install path. We resolve each plugin's ACTIVE install
+ * path from the manifest (`installed_plugins.json`) — NOT by directory-traversal
+ * order — so version selection is deterministic.
+ *
+ * If `enabledPlugins` is provided (from the target config's settings.json), only
+ * ENABLED plugins are read; disabled plugins are skipped entirely so their MCP
+ * servers never appear in the measurement. This makes the budget honor the
+ * toggle, not just manual gating.
+ *
+ * Two on-disk shapes are tolerated:
+ *   1. flat: `{ "<name>": { command, args, ... } }`            (context7, playwright)
+ *   2. wrapped: `{ "mcpServers": { "<name>": { ... } } }`       (atlassian)
+ *
+ * `type: "http"`/`"sse"` (remote/OAuth) servers have no `command` and are
+ * returned with `command === ""` so callers record them unmeasured-remote.
+ */
+export function readPluginMcpServers(
+	paiDir?: string,
+	enabledPlugins?: Record<string, boolean>,
+): McpServerConfig[] {
+	const plugins = readInstalledPluginPaths(paiDir);
+	const out: McpServerConfig[] = [];
+	const seen = new Set<string>();
+
+	for (const plugin of plugins) {
+		// Honor the enabled toggle when an enabledPlugins map is supplied. A
+		// plugin is enabled only if explicitly true (default-deny for safety —
+		// an absent key means not enabled in that config).
+		if (enabledPlugins && enabledPlugins[plugin.key] !== true) continue;
+
+		const mcpJson = join(plugin.installPath, ".mcp.json");
+		if (!existsSync(mcpJson)) continue;
+		try {
+			const parsed = JSON.parse(readFileSync(mcpJson, "utf-8")) as Record<
+				string,
+				unknown
+			>;
+			// Unwrap the optional mcpServers envelope.
+			const block =
+				parsed.mcpServers && typeof parsed.mcpServers === "object"
+					? (parsed.mcpServers as Record<string, unknown>)
+					: parsed;
+			for (const [name, raw] of Object.entries(block)) {
+				if (!raw || typeof raw !== "object") continue;
+				if (seen.has(name)) continue;
+				const cfg = raw as Record<string, unknown>;
+				const command = typeof cfg.command === "string" ? cfg.command : ""; // "" => remote/no-spawn
+				seen.add(name);
+				out.push({
+					name,
+					command,
+					args: Array.isArray(cfg.args)
+						? (cfg.args.filter((a) => typeof a === "string") as string[])
+						: undefined,
+					env:
+						cfg.env && typeof cfg.env === "object"
+							? (cfg.env as Record<string, string>)
+							: undefined,
+				});
+			}
+		} catch {
+			// Unreadable/malformed .mcp.json — skip it.
+		}
+	}
+	return out;
+}
+
+/**
+ * Read the `enabledPlugins` map from a settings.json file (the supported
+ * plugin enable/disable toggle). Returns an empty object if absent/unreadable.
+ */
+export function readEnabledPlugins(
+	settingsPath: string,
+): Record<string, boolean> {
+	if (!existsSync(settingsPath)) return {};
+	try {
+		const parsed = JSON.parse(readFileSync(settingsPath, "utf-8"));
+		const ep = parsed.enabledPlugins;
+		if (ep && typeof ep === "object") return ep as Record<string, boolean>;
+		return {};
+	} catch {
+		return {};
 	}
 }
 
@@ -177,6 +320,23 @@ export function extractToolsFromResponses(
 }
 
 /**
+ * Whether a VALID `tools/list` response (id 2, result.tools array) actually
+ * arrived. Distinguishes "server answered with an empty toolset" (valid, rare)
+ * from "server never answered" (failure) — the latter must NOT be counted as a
+ * tiny real schema. An empty `[]` from extractToolsFromResponses is ambiguous
+ * on its own; this function disambiguates.
+ */
+export function hasValidToolsListResponse(messages: JsonRpcMessage[]): boolean {
+	for (const msg of messages) {
+		if (msg.id === 2 && msg.result && typeof msg.result === "object") {
+			const tools = (msg.result as { tools?: unknown }).tools;
+			if (Array.isArray(tools)) return true;
+		}
+	}
+	return false;
+}
+
+/**
  * Measure the serialized tool-schema cost from a raw stdio response buffer.
  * Pure — given the bytes a server emitted, compute the cost. This is the
  * unit-testable core (feed it a stub server's output).
@@ -223,6 +383,15 @@ export async function measureMcpServer(
 	config: McpServerConfig,
 	timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<McpSchemaCost> {
+	// Remote/HTTP/SSE servers (no spawnable command) cannot be measured offline.
+	if (!config.command) {
+		return {
+			server: config.name,
+			chars: 0,
+			serialized: "[]",
+			error: "remote-no-command (http/sse; requires auth, unmeasured)",
+		};
+	}
 	try {
 		const proc = Bun.spawn([config.command, ...(config.args ?? [])], {
 			stdin: "pipe",
@@ -238,13 +407,20 @@ export async function measureMcpServer(
 		const timeout = new Promise<"timeout">((resolve) =>
 			setTimeout(() => resolve("timeout"), timeoutMs),
 		);
+		// Drain BOTH stdout and stderr concurrently. Leaving stderr undrained can
+		// deadlock a chatty server (it blocks writing to a full stderr pipe) and
+		// also hides the failure reason.
 		const collect = (async () => {
-			const text = await new Response(proc.stdout).text();
-			return text;
+			const [out, err] = await Promise.all([
+				new Response(proc.stdout).text(),
+				new Response(proc.stderr).text(),
+			]);
+			const exitCode = await proc.exited;
+			return { out, err, exitCode };
 		})();
 
 		const result = await Promise.race([
-			collect.then((t) => ({ kind: "done" as const, text: t })),
+			collect.then((c) => ({ kind: "done" as const, ...c })),
 			timeout.then(() => ({ kind: "timeout" as const })),
 		]);
 
@@ -261,7 +437,25 @@ export async function measureMcpServer(
 			};
 		}
 
-		return measureFromRawOutput(config.name, result.text);
+		// Validate the handshake actually completed: a real tools/list response
+		// must have arrived. If it never did, record unmeasured-with-error — do
+		// NOT count a missing response as a tiny ~2-char `[]` schema. (A valid
+		// tools/list is authoritative even if the process later exits non-zero,
+		// e.g. because we kill() it or it exits oddly after answering.)
+		const messages = parseMessages(result.out);
+		if (!hasValidToolsListResponse(messages)) {
+			const stderrHint = result.err.trim().split("\n").slice(-3).join(" | ");
+			return {
+				server: config.name,
+				chars: 0,
+				serialized: "[]",
+				error: `no tools/list response (exit ${result.exitCode})${
+					stderrHint ? `: ${stderrHint}` : ""
+				}`,
+			};
+		}
+
+		return measureFromRawOutput(config.name, result.out);
 	} catch (err) {
 		return {
 			server: config.name,
@@ -283,6 +477,50 @@ export async function measureAllMcpServers(
 	const servers = readMcpServers(claudeJsonPath);
 	const results: McpSchemaCost[] = [];
 	for (const server of servers) {
+		results.push(await measureMcpServer(server, timeoutMs));
+	}
+	return results;
+}
+
+/**
+ * Live: measure BOTH `.claude.json` mcpServers AND plugin-provided `.mcp.json`
+ * servers, deduped by name (`.claude.json` wins on collision). npx-based plugin
+ * servers (context7, playwright) need a longer fuse than local binaries, so a
+ * generous default timeout applies here.
+ *
+ * Plugin servers are filtered by the target config's `enabledPlugins`
+ * (settings.json): DISABLED plugins are not measured at all, so the result
+ * reflects what the target would actually load — the tool honors the toggle, not
+ * just manual gating. Pass `settingsPath` to point at a specific config (e.g. a
+ * clone's settings.json); defaults to the resolved (HOME-aware) settings path.
+ * Pass `includeDisabledPlugins: true` to measure every installed plugin
+ * regardless of enabled state (e.g. to show a "before" baseline).
+ *
+ * GATED behind an explicit call. Never launches `claude --bare`; no inference.
+ */
+export async function measureAllServersIncludingPlugins(opts?: {
+	claudeJsonPath?: string;
+	paiDir?: string;
+	settingsPath?: string;
+	includeDisabledPlugins?: boolean;
+	timeoutMs?: number;
+}): Promise<McpSchemaCost[]> {
+	const timeoutMs = opts?.timeoutMs ?? 60_000;
+	const claudeServers = readMcpServers(opts?.claudeJsonPath);
+
+	// Honor enabledPlugins from the target settings.json unless explicitly
+	// including disabled plugins for a baseline.
+	const enabled = opts?.includeDisabledPlugins
+		? undefined
+		: readEnabledPlugins(opts?.settingsPath ?? resolveSettingsPath());
+	const pluginServers = readPluginMcpServers(opts?.paiDir, enabled);
+
+	const byName = new Map<string, McpServerConfig>();
+	for (const s of pluginServers) byName.set(s.name, s);
+	for (const s of claudeServers) byName.set(s.name, s); // .claude.json overrides
+
+	const results: McpSchemaCost[] = [];
+	for (const server of byName.values()) {
 		results.push(await measureMcpServer(server, timeoutMs));
 	}
 	return results;
