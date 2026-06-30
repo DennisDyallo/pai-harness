@@ -1,5 +1,5 @@
---- /Users/Dennis.Dyall/.claude/skills/PAI/SKILL.md	2026-04-18 14:54:02
-+++ /var/folders/gn/mh64zz5969j89_f5dffnvnb80000kt/T/pai-harness-1782775087997-m85jmz/skills/PAI/SKILL.md	2026-06-30 01:34:00
+--- a/.claude/skills/PAI/SKILL.md
++++ b/.claude/skills/PAI/SKILL.md
 @@ -179,7 +179,7 @@
  
  [INVOKE TaskCreate for each criterion and anti-criterion]

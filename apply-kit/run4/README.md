@@ -51,10 +51,12 @@ Patched behavior:
 `test-generator.sh` verifies all of: shape, idempotency, cumulative-merge (no prior
 loss), first-run migration from the CLAUDE.md block, and the malformed-marker failure.
 
-To apply (NOT done here):
+To apply (NOT done here). NOTE: `~/.claude` is a symlink, so `git apply` on it fails
+("beyond a symbolic link"). Use GNU `patch -p1` from `$HOME`, or `git apply` against the
+resolved vault path:
 ```
-cd ~/.claude && git apply <kit>/ConsolidateLearnings.ts.patch   # or copy patched file
-bun ~/.claude/hooks/handlers/ConsolidateLearnings.ts            # regenerates block + cumulative ref
+cd "$HOME" && patch -p1 < <kit>/ConsolidateLearnings.ts.patch   # or copy the patched file
+bun ~/.claude/hooks/handlers/ConsolidateLearnings.ts           # regenerates block + cumulative ref
 ```
 
 ## PART B — bloated skill descriptions
