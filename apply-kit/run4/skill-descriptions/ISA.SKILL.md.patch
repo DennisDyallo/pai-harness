@@ -1,0 +1,21 @@
+--- a/.claude/skills/ISA/SKILL.md
++++ b/.claude/skills/ISA/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: ISA
+-description: "Owns the Ideal State Artifact — the universal primitive that holds the articulated ideal state of any thing (project, task, application, library, infrastructure, work session) as a hard-to-vary explanation. The ISA is a single document that articulates the ideal state, drives the build, verifies the build, and records the evolution of understanding. Five workflows: Scaffold (generate a fresh ISA from a prompt at a specified effort tier), Interview (adaptive question-and-answer to fill in or deepen sections), CheckCompleteness (score an existing ISA against the tier completeness gate and report gaps), Reconcile (deterministic merge of an ephemeral feature-file excerpt back into the master ISA, keyed on stable ISC IDs), Seed (bootstrap a draft project ISA from an existing repository's README, code structure, and recent commits). Examples directory contains canonical-isa.md (the showpiece reference, fully populated across all twelve sections), e1-minimal.md (90-second task — Goal + Criteria only), e3-project.md (mid-size project with eight sections), e5-comprehensive.md (full application with all twelve sections plus a populated changelog history). Twelve-section body order is locked: Problem, Vision, Out of Scope, Principles, Constraints, Goal, Criteria, Test Strategy, Features, Decisions, Changelog, Verification. The skill is invoked automatically by the Algorithm at OBSERVE for any non-trivial task and may also be invoked directly by the user to scaffold or audit an ISA outside an Algorithm run. USE WHEN: any prompt mentions ideal state, ISA, ISC, ideal state criteria, ideal state artifact, project specification, hill-climb on a task, articulating done, scaffolding an ISA, interviewing for an ISA, checking ISA completeness, reconciling an ephemeral feature file back to a master ISA, or seeding an ISA from an existing project. NOT FOR creating new skills (use CreateSkill), running the Algorithm itself (the Algorithm invokes this skill), generating non-ISA artifacts (this skill owns the ISA primitive only), or after-the-fact write-ups like postmortems, decision logs, or engineering journals (those are retrospective; the ISA is a commitment-time scaffold for ideal state)."
++description: "Owns the Ideal State Artifact (ISA) — the single document that articulates, drives, and verifies 'done' for any project, task, app, library, or work session. Five workflows: Scaffold, Interview, CheckCompleteness, Reconcile, Seed. USE WHEN ideal state, ISA, ISC, ideal state criteria, project spec, articulating done, hill-climb on a task, scaffolding an ISA, interviewing for an ISA, ISA completeness check, reconciling a feature file to a master ISA, or seeding an ISA from a project. NOT FOR creating skills (use CreateSkill) or retrospective write-ups like postmortems."
+ effort: medium
+ ---
+ 
+@@ -29,6 +29,10 @@
+ 
+ This skill owns the canonical template, the workflows that generate and refine ISAs, and the example library.
+ 
++**Invocation:** the Algorithm invokes this skill automatically at OBSERVE for any non-trivial task; it may also be invoked directly by the user to scaffold or audit an ISA outside an Algorithm run.
++
++**When NOT to use:** creating a new skill → use CreateSkill; running the Algorithm itself → the Algorithm invokes *this* skill, not the other way around; generating non-ISA artifacts → this skill owns the ISA primitive only; after-the-fact write-ups (postmortems, decision logs, engineering journals) → those are retrospective, whereas the ISA is a commitment-time scaffold for ideal state.
++
+ ---
+ 
+ ## The Twelve-Section Body (locked v6.2.0)

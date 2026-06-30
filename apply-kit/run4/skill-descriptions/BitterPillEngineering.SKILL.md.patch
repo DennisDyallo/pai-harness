@@ -1,0 +1,19 @@
+--- a/.claude/skills/BitterPillEngineering/SKILL.md
++++ b/.claude/skills/BitterPillEngineering/SKILL.md
+@@ -1,6 +1,6 @@
+ ---
+ name: BitterPillEngineering
+-description: "Audits any AI instruction set for over-prompting using the core test: would a smarter model make this rule unnecessary? Applies Five Questions to every rule — Does Claude already do this? Contradiction? Redundant? One-off fix? Vague? — then classifies each as CUT / RESOLVE / MERGE / EVALUATE / SHARPEN / MOVE / KEEP. Two workflows: Audit (full system — reads all force-loaded files from settings.json, reports token savings estimate) and QuickCheck (single file, fast keep/cut/sharpen verdict). Outputs categorized report with estimated line and token savings. Core principle: less scaffolding = better output — every unnecessary rule competes for attention and degrades the rules that matter. Anti-fragile rules to KEEP: verification harnesses, ISC, data pipelines, specific DO/DON'T examples, tool preferences, routing rules. Fragile rules to CUT: CoT orchestrators, format parsers, retry cascades, numeric personality scales, abstract value statements. Requires loadAtStartup and postCompactRestore.fullFiles to stay in sync in settings.json — removing a file from one requires checking the other. NOT FOR general code simplification or refactoring (use simplify skill). NOT FOR attacking logical or strategic flaws in ideas (use RedTeam for that). USE WHEN BPE, bitter pill, audit setup, over-prompting, trim instructions, audit rules, dead weight, redundant rules, simplify setup, instruction audit, prompt hygiene, check these rules, clean up CLAUDE.md."
++description: "Audits any AI instruction set for over-prompting via the core test: would a smarter model make this rule unnecessary? Classifies each rule CUT / RESOLVE / MERGE / EVALUATE / SHARPEN / MOVE / KEEP and estimates token savings. USE WHEN BPE, bitter pill, audit setup/rules, over-prompting, trim instructions, dead weight, prompt hygiene, clean up CLAUDE.md. NOT FOR code simplification (use simplify) or attacking an idea's logic (use RedTeam)."
+ effort: medium
+ ---
+ 
+@@ -41,6 +41,8 @@
+ | **Audit** | "audit setup", "full audit", "check all rules" | `Workflows/Audit.md` |
+ | **QuickCheck** | "quick check", "check this file", "check these rules" | `Workflows/QuickCheck.md` |
+ 
++**When NOT to use:** general code simplification or refactoring → use the `simplify` skill; attacking logical or strategic flaws in an idea → use RedTeam.
++
+ ## Examples
+ 
+ **Example 1: Full system audit**
